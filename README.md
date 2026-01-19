@@ -91,3 +91,5 @@ curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json"
 **License:** MIT
 Minimal footprint • Real-time predictions • Production inspired
 # Fraud-Detection-MLOps
+## Test Commit
+Verifying git commit and push workflow.
