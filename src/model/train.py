@@ -1,67 +1,105 @@
-import argparse, os
-import pandas as pd
+print("### RUNNING XGBOOST TRAINING FILE ###")
+
+import argparse
+import os
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_auc_score
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
 import joblib
 
-def make_synthetic(n=1000, fraud_ratio=0.02, random_state=42):
-    rng = np.random.RandomState(random_state)
-    X = rng.normal(size=(n, 30))
-    # first column = Time, second = Amount, next 28 = V1..V28
-    X[:,0] = rng.uniform(0, 172792, size=n)   # Time
-    X[:,1] = rng.exponential(scale=100.0, size=n)  # Amount
-    y = (rng.rand(n) < fraud_ratio).astype(int)
-    cols = ['Time','Amount'] + [f'V{i}' for i in range(1,29)]
-    return pd.DataFrame(X, columns=cols), pd.Series(y, name='Class')
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    roc_auc_score,
+    average_precision_score
+)
+
+from xgboost import XGBClassifier
+
+COST_FP = 1
+COST_FN = 50
+
 
 def load_data(path):
-    if path and os.path.exists(path):
-        df = pd.read_csv(path)
-        if 'Class' not in df.columns:
-            raise ValueError("CSV must contain 'Class' column")
-        X = df.drop(columns=['Class'])
-        y = df['Class']
-        return X, y
-    else:
-        print("Data path not found: generating synthetic dataset for demo.")
-        return make_synthetic(n=2000)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Data file not found: {path}")
 
-def main(args):
+    df = pd.read_csv(path)
+    if "Class" not in df.columns:
+        raise ValueError("Dataset must contain 'Class' column")
+
+    X = df.drop(columns=["Class"])
+    y = df["Class"]
+    return X, y
+
+
+def expected_loss(y_true, y_prob, threshold):
+    y_pred = (y_prob >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return fp * COST_FP + fn * COST_FN
+
+
+def train(args):
     X, y = load_data(args.data_path)
-    # split
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
 
-    # scaler
-    scaler = StandardScaler()
-    X_train_s = scaler.fit_transform(X_train)
-    X_val_s = scaler.transform(X_val)
-    X_test_s = scaler.transform(X_test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, stratify=y, random_state=42
+    )
 
-    # handle imbalance with class_weight
-    clf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42, n_jobs=-1)
-    clf.fit(X_train_s, y_train)
+    scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
+    print(f"scale_pos_weight: {scale_pos_weight:.2f}")
 
-    # eval
-    y_pred = clf.predict(X_test_s)
-    y_prob = clf.predict_proba(X_test_s)[:,1] if hasattr(clf, "predict_proba") else None
-    print(classification_report(y_test, y_pred))
-    try:
-        auc = roc_auc_score(y_test, y_prob)
-        print("AUC-ROC:", auc)
-    except Exception:
-        pass
+    model = XGBClassifier(
+        n_estimators=400,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        scale_pos_weight=scale_pos_weight,
+        objective="binary:logistic",
+        eval_metric="aucpr",
+        random_state=42,
+        n_jobs=-1
+    )
 
-    # save
-    os.makedirs('models', exist_ok=True)
-    joblib.dump({'model': clf, 'scaler': scaler}, 'models/fraud_detector.pkl')
+    model.fit(X_train, y_train)
+
+    y_prob = model.predict_proba(X_test)[:, 1]
+
+    thresholds = np.linspace(0.01, 0.5, 50)
+    losses = [expected_loss(y_test, y_prob, t) for t in thresholds]
+
+    best_idx = int(np.argmin(losses))
+    best_threshold = float(thresholds[best_idx])
+
+    y_final = (y_prob >= best_threshold).astype(int)
+
+    print("\n=== Final Evaluation (XGBoost + Cost) ===")
+    print(f"Best Threshold: {best_threshold:.3f}")
+    print(f"Expected Loss: {losses[best_idx]}")
+    print(classification_report(y_test, y_final, zero_division=0))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, y_final))
+
+    print(f"ROC-AUC: {roc_auc_score(y_test, y_prob):.3f}")
+    print(f"PR-AUC: {average_precision_score(y_test, y_prob):.3f}")
+
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(
+        {
+            "model": model,
+            "threshold": best_threshold,
+            "cost_fp": COST_FP,
+            "cost_fn": COST_FN,
+            "features": list(X.columns)
+        },
+        "models/fraud_detector.pkl"
+    )
+
     print("Saved model to models/fraud_detector.pkl")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", default="data/creditcard.csv")
     args = parser.parse_args()
-    main(args)
+    train(args)
