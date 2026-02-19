@@ -1,12 +1,33 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import joblib, os, pandas as pd
+import joblib
+import numpy as np
 from pathlib import Path
+
+# -----------------------------
+# Load trained artifacts
+# -----------------------------
+MODEL_PATH = Path("models/fraud_detector.pkl")
+
+if not MODEL_PATH.exists():
+    raise RuntimeError(
+        "Model not found. Run `python src/model/train.py` first."
+    )
+
+artifact = joblib.load(MODEL_PATH)
+
+model = artifact["model"]
+THRESHOLD = artifact["threshold"]
+COST_FP = artifact["cost_fp"]
+COST_FN = artifact["cost_fn"]
+FEATURES = artifact["features"]
 
 app = FastAPI(title="Fraud Detection API")
 
-MODEL_PATH = Path("models/fraud_detector.pkl")
 
+# -----------------------------
+# Request schema
+# -----------------------------
 class Transaction(BaseModel):
     Time: float
     Amount: float
@@ -39,29 +60,44 @@ class Transaction(BaseModel):
     V27: float
     V28: float
 
-model = None
-scaler = None
-try:
-    data = joblib.load(MODEL_PATH)
-    model = data['model']
-    scaler = data.get('scaler', None)
-except Exception:
-    model = None
 
+# -----------------------------
+# Health check
+# -----------------------------
 @app.get("/")
-def read_root():
-    return {"status": "ok", "model_loaded": model is not None}
+def health():
+    return {
+        "status": "ok",
+        "model_loaded": True,
+        "threshold": THRESHOLD,
+        "cost_policy": {
+            "cost_fp": COST_FP,
+            "cost_fn": COST_FN
+        }
+    }
 
+
+# -----------------------------
+# Prediction endpoint
+# -----------------------------
 @app.post("/predict")
 def predict(tx: Transaction):
-    if model is None:
-        raise HTTPException(status_code=503, detail="Model not found. Run `python src/model/train.py` to create models/fraud_detector.pkl")
-    df = pd.DataFrame([tx.dict()])
-    features = df.drop(columns=[])
-    if scaler is not None:
-        features = scaler.transform(features)
-    y_pred = model.predict(features)
-    y_prob = None
-    if hasattr(model, "predict_proba"):
-        y_prob = model.predict_proba(features)[:,1].tolist()
-    return {"fraudulent": bool(int(y_pred[0])), "probability": y_prob[0] if y_prob is not None else None}
+    try:
+        # Build feature vector in TRAINING ORDER
+        x = np.array([getattr(tx, f) for f in FEATURES], dtype=float).reshape(1, -1)
+
+        prob = float(model.predict_proba(x)[0][1])
+        decision = int(prob >= THRESHOLD)
+
+        return {
+            "fraud_probability": round(prob, 4),
+            "threshold": THRESHOLD,
+            "decision": "FRAUD" if decision == 1 else "LEGIT",
+            "cost_policy": {
+                "cost_fp": COST_FP,
+                "cost_fn": COST_FN
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
