@@ -10,3 +10,8 @@ venv/
 logs/
 mlflow.db
 data/creditcard.csv
+
+data/creditcard.csv
+logs/
+mlflow.db
+venv/
