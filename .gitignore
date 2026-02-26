@@ -5,3 +5,8 @@ models/
 *.pyc
 .DS_Store
 venv/
+
+venv/
+logs/
+mlflow.db
+data/creditcard.csv
