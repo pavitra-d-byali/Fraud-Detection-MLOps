@@ -186,3 +186,4 @@ if __name__ == "__main__":
     parser.add_argument("--data-path", default="data/creditcard.csv")
     args = parser.parse_args()
     train(args)
+# TODO: integrate config module
