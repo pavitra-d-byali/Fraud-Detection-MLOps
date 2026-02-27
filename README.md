@@ -175,3 +175,5 @@ Focused on building production-grade, business-aware ML systems
 
 📄 License
 MIT License
+## Architecture
+- Data -> Training -> MLflow Logging -> Evaluation
