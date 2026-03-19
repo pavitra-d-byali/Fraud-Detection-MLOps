@@ -1,0 +1,247 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #eef2f7;
+    color: #111827;
+}
+
+.page {
+    min-height: 100vh;
+    padding: 32px 16px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.hero {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 0 0 10px 0;
+    font-size: 48px;
+    line-height: 1.1;
+}
+
+.subtitle {
+    margin: 0 0 18px 0;
+    font-size: 20px;
+    color: #4b5563;
+}
+
+.info-box {
+    background: #f8fbff;
+    border-left: 5px solid #2563eb;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.info-box p {
+    margin: 6px 0;
+    color: #374151;
+}
+
+.meta-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.meta-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.meta-label {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.meta-value {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #111827;
+}
+
+.control-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+button {
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    background: #e5e7eb;
+    color: #111827;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+}
+
+.section-note {
+    margin: 0 0 14px 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.basic-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.field input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 15px;
+    background: #ffffff;
+}
+
+.field input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.predict-btn {
+    width: 100%;
+    margin-top: 8px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: bold;
+    padding: 14px 18px;
+}
+
+.result {
+    margin-top: 20px;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+}
+
+.result h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-size: 24px;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.result-card {
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.result-label {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.result-value {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.result-note {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.result.fraud {
+    background: #fee2e2;
+    border-left: 6px solid #dc2626;
+}
+
+.result.legit {
+    background: #dcfce7;
+    border-left: 6px solid #16a34a;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    h1 {
+        font-size: 34px;
+    }
+
+    .subtitle {
+        font-size: 17px;
+    }
+
+    .hero,
+    .card,
+    .result {
+        padding: 20px;
+    }
+}

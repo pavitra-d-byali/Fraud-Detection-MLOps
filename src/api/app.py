@@ -1,18 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pathlib import Path
+
 import joblib
 import numpy as np
-from pathlib import Path
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+
+# -----------------------------
+# Base paths
+# -----------------------------
+BASE_DIR = Path(__file__).resolve().parents[2]
+MODEL_PATH = BASE_DIR / "models" / "fraud_detector.pkl"
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
 
 # -----------------------------
 # Load trained artifacts
 # -----------------------------
-MODEL_PATH = Path("models/fraud_detector.pkl")
-
 if not MODEL_PATH.exists():
-    raise RuntimeError(
-        "Model not found. Run `python src/model/train.py` first."
-    )
+    raise RuntimeError("Model not found. Run `python src/model/train.py` first.")
 
 artifact = joblib.load(MODEL_PATH)
 
@@ -22,8 +30,13 @@ COST_FP = artifact["cost_fp"]
 COST_FN = artifact["cost_fn"]
 FEATURES = artifact["features"]
 
+# -----------------------------
+# App setup
+# -----------------------------
 app = FastAPI(title="Fraud Detection API")
 
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # -----------------------------
 # Request schema
@@ -60,11 +73,17 @@ class Transaction(BaseModel):
     V27: float
     V28: float
 
+# -----------------------------
+# Frontend route
+# -----------------------------
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 # -----------------------------
 # Health check
 # -----------------------------
-@app.get("/")
+@app.get("/health")
 def health():
     return {
         "status": "ok",
@@ -76,16 +95,13 @@ def health():
         }
     }
 
-
 # -----------------------------
 # Prediction endpoint
 # -----------------------------
 @app.post("/predict")
 def predict(tx: Transaction):
     try:
-        # Build feature vector in TRAINING ORDER
         x = np.array([getattr(tx, f) for f in FEATURES], dtype=float).reshape(1, -1)
-
         prob = float(model.predict_proba(x)[0][1])
         decision = int(prob >= THRESHOLD)
 

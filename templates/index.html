@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fraud Detection Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="page">
+        <div class="container">
+            <header class="hero">
+                <h1>Fraud Detection Dashboard</h1>
+                <p class="subtitle">
+                    Cost-sensitive fraud detection system using XGBoost and threshold-based decisioning.
+                </p>
+
+                <div class="info-box">
+                    <p><strong>Dataset note:</strong> V1–V28 are anonymized PCA-based transaction features.</p>
+                    <p><strong>Purpose:</strong> This app screens transaction patterns and estimates fraud likelihood.</p>
+                </div>
+
+                <div class="meta-row">
+                    <div class="meta-card">
+                        <span class="meta-label">Model Type</span>
+                        <span class="meta-value">XGBoost Classifier</span>
+                    </div>
+                    <div class="meta-card">
+                        <span class="meta-label">Serving Mode</span>
+                        <span class="meta-value">FastAPI + Jinja2</span>
+                    </div>
+                    <div class="meta-card">
+                        <span class="meta-label">Decision Logic</span>
+                        <span class="meta-value">Threshold-Based</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="control-bar">
+                <button type="button" onclick="fillLegitSample()">Load Legit Sample</button>
+                <button type="button" onclick="fillFraudSample()">Load Suspicious Sample</button>
+                <button type="button" onclick="clearForm()">Clear</button>
+            </section>
+
+            <section class="card">
+                <form id="predictForm">
+                    <h2>Transaction Info</h2>
+                    <div class="grid basic-grid" id="basicGrid"></div>
+
+                    <h2>Encoded Risk Features</h2>
+                    <p class="section-note">
+                        These are anonymized model features from the dataset.
+                    </p>
+                    <div class="grid" id="featureGrid"></div>
+
+                    <button type="submit" class="predict-btn">Predict Transaction</button>
+                </form>
+            </section>
+
+            <section id="result" class="result hidden"></section>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
