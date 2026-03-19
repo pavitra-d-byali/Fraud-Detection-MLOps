@@ -14,3 +14,5 @@ data/creditcard.csv
 logs/
 mlflow.db
 venv/
+mlruns/
+models/test_data.pkl
